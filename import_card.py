@@ -33,7 +33,6 @@ for card in cards:
     cardRarity  = card[5]
     cartaRareza = 'C'
     print("INSERTING card into Database (%d of \t%d)" % (cardRow, cardTotal), end='\r')
-    sleep(0.5)
     cartaCodigo = cardNumber+"/"+cardSetCode
     match cardRarity:
         case 'common':
