@@ -32,32 +32,32 @@ insertQuery = "INSERT INTO practica.carta (codigo, nombre, rareza, tipo) VALUES 
 cardRow = 1
 cardTotal = len(cards)
 
-for card in cards:
-    cardName    = card[0]
-    cardNumber  = card[1]
-    cardSetCode = card[2]
-    cardType    = card[3]
-    cardRarity  = card[4]
-    cartaRareza = 'C'
-    print("INSERTING card into Database (%d of \t%d)" % (cardRow, cardTotal), end='\r')
-    cartaCodigo = cardNumber+"/"+cardSetCode
-    match cardRarity:
-        case 'common':
-            cartaRareza = 'C'
-        case 'uncommon':
-            cartaRareza = 'U'
-        case 'rare':
-            cartaRareza = 'R'
-        case 'mythic':
-            cartaRareza = 'MR'
-        case 'special':
-            cartaRareza = 'S'
-        case 'bonus':
-            cartaRareza = 'B'
-        case default:
-            cartaRareza = 'C'
-    success = False
-    with open('queries.sql', 'w') as f:
+with open('queries.sql', 'w') as f:
+    for card in cards:
+        cardName    = card[0]
+        cardNumber  = card[1]
+        cardSetCode = card[2]
+        cardType    = card[3]
+        cardRarity  = card[4]
+        cartaRareza = 'C'
+        print("INSERTING card into Database (%d of \t%d)" % (cardRow, cardTotal), end='\r')
+        cartaCodigo = cardNumber+"/"+cardSetCode
+        match cardRarity:
+            case 'common':
+                cartaRareza = 'C'
+            case 'uncommon':
+                cartaRareza = 'U'
+            case 'rare':
+                cartaRareza = 'R'
+            case 'mythic':
+                cartaRareza = 'MR'
+            case 'special':
+                cartaRareza = 'S'
+            case 'bonus':
+                cartaRareza = 'B'
+            case default:
+                cartaRareza = 'C'
+        success = False
         try:
             # print(c.mogrify(insertQuery, (cartaCodigo, cardName, cartaRareza, cardType, )))
             query(c, insertQuery, (cartaCodigo, cardName, cartaRareza, cardType, ))
