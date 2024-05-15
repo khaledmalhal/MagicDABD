@@ -1,5 +1,7 @@
 #! /usr/bin/python3
+# -*- coding: utf-8 -*-
 
+from psycopg2 import Error
 import psycopg2
 import sqlite3
 from time import sleep
@@ -15,22 +17,27 @@ conn = psycopg2.connect(dbname="est_b7241743",
                         host="ubiwan.epsevg.upc.edu")
 c = conn.cursor()
 
-q = "SELECT DISTINCT row_number() over (order by '') as \"#\", name, number, setCode, type, rarity FROM cards WHERE printf(\"%d\", number) = number;"
+q = "SELECT DISTINCT name, number, setCode, type, rarity FROM cards WHERE printf(\"%d\", number) = number;"
 res = card_conn.execute(q)
 cards = res.fetchall()
+card_conn.close()
 
-c.execute("SET search_path TO practica;")
-conn.commit()
+# try:
+#     c.execute("SET search_path TO practica;")
+# except Error as e:
+#     print(e)
+# conn.commit()
 
-insertQuery = "INSERT INTO Cartas (codigo, nombre, rareza, tipo) VALUES (?, ?, ?, ?);"
+insertQuery = "INSERT INTO practica.carta (codigo, nombre, rareza, tipo) VALUES (%s, %s, %s, %s);"
 cardRow = 1
 cardTotal = len(cards)
+
 for card in cards:
-    cardName    = card[1]
-    cardNumber  = card[2]
-    cardSetCode = card[3]
-    cardType    = card[4]
-    cardRarity  = card[5]
+    cardName    = card[0]
+    cardNumber  = card[1]
+    cardSetCode = card[2]
+    cardType    = card[3]
+    cardRarity  = card[4]
     cartaRareza = 'C'
     print("INSERTING card into Database (%d of \t%d)" % (cardRow, cardTotal), end='\r')
     cartaCodigo = cardNumber+"/"+cardSetCode
@@ -50,11 +57,17 @@ for card in cards:
         case default:
             cartaRareza = 'C'
     success = False
-    while success is False:
+    with open('queries.sql', 'w') as f:
         try:
-            # query(c, insertQuery, (cartaCodigo, cardName, cartaRareza, cardType))
+            # print(c.mogrify(insertQuery, (cartaCodigo, cardName, cartaRareza, cardType, )))
+            query(c, insertQuery, (cartaCodigo, cardName, cartaRareza, cardType, ))
+            conn.commit()
+            f.write(str(c.mogrify(insertQuery, (cartaCodigo, cardName, cartaRareza, cardType, )))+"\n")
             success = True
             cardRow = cardRow + 1
-        except:
-            sleep(1)
-            print("Error")
+        except Error as e:
+            # sleep(1)
+            print(e)
+            conn.rollback()
+conn.commit()
+c.close()
