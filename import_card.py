@@ -17,7 +17,7 @@ conn = psycopg2.connect(dbname="est_b7241743",
                         host="ubiwan.epsevg.upc.edu")
 c = conn.cursor()
 
-q = "SELECT DISTINCT name, number, setCode, type, rarity FROM cards WHERE printf(\"%d\", number) = number;"
+q = "SELECT DISTINCT name, number, setCode, type, rarity FROM cards WHERE printf(\"%d\", number) = number AND language=\"English\" GROUP BY setCode, number;"
 res = card_conn.execute(q)
 cards = res.fetchall()
 card_conn.close()
@@ -61,7 +61,6 @@ for card in cards:
         try:
             # print(c.mogrify(insertQuery, (cartaCodigo, cardName, cartaRareza, cardType, )))
             query(c, insertQuery, (cartaCodigo, cardName, cartaRareza, cardType, ))
-            conn.commit()
             f.write(str(c.mogrify(insertQuery, (cartaCodigo, cardName, cartaRareza, cardType, )))+"\n")
             success = True
             cardRow = cardRow + 1
