@@ -25,7 +25,7 @@ for provincia in provincias:
     try:
         print("INSERTING provincia into Database (%d of \t%d)" % (i, len(provincias)), end='\r')
         nombre = provincia[1]
-        print(cursor.mogrify(insertQuery, (nombre, )))
+        # print(cursor.mogrify(insertQuery, (nombre, )))
         query(cursor, insertQuery, (nombre, ))
     except psycopg2.Error as e:
         print(e)

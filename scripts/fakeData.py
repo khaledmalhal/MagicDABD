@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from time import sleep
 from random import randint
 from faker import Faker
 import psycopg2
@@ -12,7 +13,7 @@ nifLetters = ('T', 'R', 'W', 'A', 'G', 'M', 'Y', 'F', 'P', 'D', 'X', 'B',
 
 fake = Faker('es_ES')
 
-num_jugadores = 10
+num_jugadores = 5000
 
 def query(c, q, p):
     c.execute(q, p)
@@ -52,7 +53,7 @@ def get_nif():
 def create_jugadores(cursor):
     q = "INSERT INTO practica.jugador (nif, nombre, apellido, ciudad, provincia) VALUES (%s, %s, %s, %s, %s)"
     for i in range(num_jugadores):
-      print("INSERTING Jugadores (%d of %d)" % (i, num_jugadores), end="\33[2K\r")
+      print("INSERTING Jugadores (%d of %d)" % (i, num_jugadores), end="\r")
       nombre    = randname(randint(2, 3))
       apellido  = randname(randint(3, 4))
       nif       = get_nif()
@@ -60,8 +61,9 @@ def create_jugadores(cursor):
       ciudad    = ciudades[randIndex][0]
       provincia = ciudades[randIndex][1]
       try:
-        print(cursor.mogrify(q, (nif, nombre, apellido, ciudad, provincia,)))
+        # print(cursor.mogrify(q, (nif, nombre, apellido, ciudad, provincia,)))
         # query(cursor, q, (nif, nombre, apellido, ciudad, provincia,))
+        sleep(0.001)
       except psycopg2.Error as e:
          print(e)
          conn.rollback()

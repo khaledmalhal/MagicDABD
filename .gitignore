@@ -1,3 +1,5 @@
 .~lock.DABD_enunciado.docx#
 *.lock
 AllPrintings.sqlite
+queries.sql
+
