@@ -59,6 +59,10 @@ q = "SELECT COUNT(*) FROM practica.carta;"
 cursor.execute(q)
 num_cartas = cursor.fetchone()
 
+q = "SELECT nombre FROM practica.tienda;"
+cursor.execute(q)
+tiendas = cursor.fetchall()
+
 def get_nif():
   nif = randint(10000000, 99999999)
   nif = str(nif) + nifLetters[(nif % 23)-1]
@@ -143,12 +147,53 @@ def create_deck(cursor):
             print(e)
             conn.rollback()
   conn.commit()
-          
 
+def create_tienda(cursor):
+  for i in range(1487):
+    nombre = randname(randint(2,3)) + ' ' + fake.company()
+    randCiudad = randint(0, len(ciudades) - 1)
+    telefono = fake.phone_number()
+    q = "INSERT INTO practica.tienda (nombre, telefono, ciudad, provincia) VALUES (%s, %s, %s, %s);"
+    p = (nombre, telefono, ciudades[randCiudad][0], ciudades[randCiudad][1])
+    insertedNombre = []
+    insertedTelefono = []
+    try:
+      if nombre not in insertedNombre and telefono not in insertedTelefono:
+        f.write(str(cursor.mogrify(q, p)) + "\n")
+        query(cursor, q, p)
+        insertedNombre.append(nombre)
+        insertedTelefono.append(telefono)
+    except psycopg2.Error as e:
+      print(e)
+      conn.rollback()
+  conn.commit()
+
+def create_inventario(cursor):
+  for i in range(len(tiendas) - 1):
+    randCartas = randint(50, 200)
+    inserted = []
+    print("Inventario tienda %d de %d" % (i, len(tiendas)), end='\r')
+    for j in range(randCartas):
+      randIndex = randint(0, len(cartas) - 1)
+      randCantidad = randint(20, 100)
+      carta = cartas[randIndex][0]
+      q = "INSERT INTO practica.inventario (cantidad, tienda, carta) VALUES (%s, %s, %s);"
+      p = (randCantidad, tiendas[i][0], carta,)
+      try: 
+        if carta not in inserted:
+          f.write(str(cursor.mogrify(q, p)) + "\n")
+          query(cursor, q, p)
+          inserted.append(carta)
+      except psycopg2.Error as e:
+        print(e)
+        conn.rollback()
+  conn.commit()
 
 # create_jugadores(cursor)
 # create_copias(cursor)
-create_deck(cursor)
+# create_deck(cursor)
+# create_tienda(cursor)
+create_inventario(cursor)
 # print(end="\33[2K\r")
 f.close()
 conn.close()

@@ -49,7 +49,7 @@ CREATE TABLE Ciudad (nombre VARCHAR(100) NOT NULL,
                      PRIMARY KEY (nombre, provincia));
 
 CREATE TABLE Tienda (nombre VARCHAR(100) NOT NULL,
-                     telefono BIGINT NOT NULL CHECK (telefono < 1000000000 AND telefono > 99999999),
+                     telefono VARCHAR(20) NOT NULL,
                      ciudad VARCHAR(100) NOT NULL,
                      provincia VARCHAR(40) NOT NULL,
                      PRIMARY KEY (nombre),
