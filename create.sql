@@ -28,15 +28,15 @@ DROP TABLE practica.inventario;
 DROP TABLE practica.tienda;
 DROP TABLE practica.ciudad;
 DROP TABLE practica.provincia;
--- DROP TABLE practica.carta;
+DROP TABLE practica.carta;
 
 SET search_path TO practica;
 
--- CREATE TABLE Carta (codigo VARCHAR(10) NOT NULL,
--- 		            nombre VARCHAR(150) NOT NULL,
--- 		            rareza VARCHAR(2) NOT NULL,
--- 		            tipo VARCHAR(50) NOT NULL,
--- 		            PRIMARY KEY (codigo));
+CREATE TABLE Carta (codigo VARCHAR(10) NOT NULL,
+		            nombre VARCHAR(150) NOT NULL,
+		            rareza VARCHAR(2) NOT NULL,
+		            tipo VARCHAR(50) NOT NULL,
+		            PRIMARY KEY (codigo));
 
 CREATE TABLE Provincia (nombre VARCHAR(40) NOT NULL,
                         PRIMARY KEY (nombre));

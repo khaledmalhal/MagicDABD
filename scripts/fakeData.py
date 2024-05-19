@@ -62,8 +62,7 @@ def create_jugadores(cursor):
       provincia = ciudades[randIndex][1]
       try:
         # print(cursor.mogrify(q, (nif, nombre, apellido, ciudad, provincia,)))
-        # query(cursor, q, (nif, nombre, apellido, ciudad, provincia,))
-        sleep(0.001)
+        query(cursor, q, (nif, nombre, apellido, ciudad, provincia,))
       except psycopg2.Error as e:
          print(e)
          conn.rollback()
