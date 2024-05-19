@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 from time import sleep
 from random import randint
 from faker import Faker
@@ -36,6 +37,9 @@ conn = psycopg2.connect(database="est_b7241743",
                         password="dB.b7241743",
                         host="ubiwan.epsevg.upc.edu")
 cursor = conn.cursor()
+
+os.remove('queries.sql')
+f = open('queries.sql', 'a')
 
 # Obteniendo ciudades
 q = "SELECT nombre, provincia FROM practica.ciudad;"
@@ -80,35 +84,71 @@ def create_jugadores(cursor):
   conn.commit()
 
 def create_copias(cursor):
-  with open('queries.sql', 'a') as f:
-    for i in range(len(jugadores) - 1):
-      max_copias = randint(0, num_cartas[0] - 1)
-      print("max_copias: %d" % (max_copias))
-      copias = 0
-      inserted = []
-      for j in range(max_copias):
-        # print("copias: %d" % (copias), end="\r")
-        rand_copias = randint(1, 10)
-        carta_index = randint(0, num_cartas[0] - 1)
-        carta = cartas[carta_index][0]
-        q = "INSERT INTO practica.copia (cantidad, carta, propietario) VALUES (%s, %s, %s)"
-        p = (rand_copias, carta, jugadores[i][0], )
-        try:
-          if carta not in inserted:
-            inserted.append(carta)
-            f.write(str(cursor.mogrify(q, p)) + '\n')
-            # query(cursor, q, p)
-        except psycopg2.Error as e:
-          print(e)
+  for i in range(len(jugadores) - 1):
+    max_copias = randint(80, 100)
+    # max_copias = randint(0, num_cartas[0] - 1)
+    print("max_copias: %d" % (max_copias))
+    inserted = []
+    for j in range(max_copias):
+      # print("copias: %d" % (copias), end="\r")
+      rand_copias = randint(1, 10)
+      carta_index = randint(0, num_cartas[0] - 1)
+      carta = cartas[carta_index][0]
+      q = "INSERT INTO practica.copia (cantidad, carta, propietario) VALUES (%s, %s, %s)"
+      p = (rand_copias, carta, jugadores[i][0], )
+      try:
+        if carta not in inserted:
+          inserted.append(carta)
+          f.write(str(cursor.mogrify(q, p)) + '\n')
+          query(cursor, q, p)
+      except psycopg2.Error as e:
+        print(e)
+        conn.rollback()
   conn.commit()
 
+def create_deck(cursor):
+  for i in range(len(jugadores) - 1):
+    q = "SELECT * FROM practica.copia WHERE propietario=%s"
+    p = (jugadores[i][0], )
+    cursor.execute(q, p)
+    copias = cursor.fetchall()
+    max_decks = randint(0, 3)
+    print("%d copias for jugador %s" % (len(copias), jugadores[i][0]))
+    for j in range(max_decks):
+      q = "INSERT INTO practica.deck (propietario) VALUES (%s)"
+      p = (jugadores[i][0], )
+      query(cursor, q, p)
+      q = "SELECT id FROM practica.deck WHERE propietario=%s ORDER BY id DESC LIMIT 1"
+      cursor.execute(q, p)
+      deckID = cursor.fetchone()[0]
+      maxRepetido = randint(30, 60)
+      repetidos = 0
+      inserted = []
+      while repetidos < maxRepetido and len(inserted) < len(copias):
+        randIndex    = randint(0, len(copias) - 1)
+        carta        = copias[randIndex][1]
+        cantidad     = copias[randIndex][0]
+        randCantidad = randint(1, cantidad)
+        if randCantidad + repetidos > maxRepetido:
+          randCantidad = maxRepetido - repetidos
+        if carta not in inserted:
+          try:
+            q = "INSERT INTO practica.repetido (cantidad, carta, deck, propietario) VALUES (%s, %s, %s, %s);"
+            p = (randCantidad, carta, deckID, jugadores[i][0], )
+            inserted.append(carta)
+            f.write(str(cursor.mogrify(q, p)) + "\n")
+            query(cursor, q, p)
+            repetidos += randCantidad
+          except psycopg2.Error as e:
+            print(e)
+            conn.rollback()
+  conn.commit()
+          
 
 
-
-# if copias + rand_copias > max_copias:
-#   rand_copias = max_copias - copias
-# copias = copias + rand_copias
 # create_jugadores(cursor)
-create_copias(cursor)
+# create_copias(cursor)
+create_deck(cursor)
 # print(end="\33[2K\r")
+f.close()
 conn.close()
