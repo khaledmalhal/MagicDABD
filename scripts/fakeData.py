@@ -3,6 +3,7 @@
 
 import os
 from time import sleep
+from datetime import datetime
 from random import randint
 from faker import Faker
 import psycopg2
@@ -51,7 +52,7 @@ q = "SELECT codigo FROM practica.carta;"
 cursor.execute(q)
 cartas = cursor.fetchall()
 
-q = "SELECT nif FROM practica.jugador LIMIT 10;"
+q = "SELECT nif FROM practica.jugador;"
 cursor.execute(q)
 jugadores = cursor.fetchall()
 
@@ -89,14 +90,12 @@ def create_jugadores(cursor):
 
 def create_copias(cursor):
   for i in range(len(jugadores) - 1):
-    max_copias = randint(80, 100)
-    # max_copias = randint(0, num_cartas[0] - 1)
-    print("max_copias: %d" % (max_copias))
+    max_copias = randint(40, 70)
     inserted = []
+    print("Creando copias para jugadores (%d de %d)" % (i, len(jugadores) - 1), end='\r')
     for j in range(max_copias):
-      # print("copias: %d" % (copias), end="\r")
       rand_copias = randint(1, 10)
-      carta_index = randint(0, num_cartas[0] - 1)
+      carta_index = randint(0, len(cartas) - 1)
       carta = cartas[carta_index][0]
       q = "INSERT INTO practica.copia (cantidad, carta, propietario) VALUES (%s, %s, %s)"
       p = (rand_copias, carta, jugadores[i][0], )
@@ -112,12 +111,12 @@ def create_copias(cursor):
 
 def create_deck(cursor):
   for i in range(len(jugadores) - 1):
+    print("Creando deck para jugadores (%d de %d)" % (i, len(jugadores) - 1), end='\r')
     q = "SELECT * FROM practica.copia WHERE propietario=%s"
     p = (jugadores[i][0], )
     cursor.execute(q, p)
     copias = cursor.fetchall()
-    max_decks = randint(0, 3)
-    print("%d copias for jugador %s" % (len(copias), jugadores[i][0]))
+    max_decks = randint(1, 3)
     for j in range(max_decks):
       q = "INSERT INTO practica.deck (propietario) VALUES (%s)"
       p = (jugadores[i][0], )
@@ -189,11 +188,87 @@ def create_inventario(cursor):
         conn.rollback()
   conn.commit()
 
+def simulate_tournament(cursor, participantes, fecha, ciudad, provincia):
+  if len(participantes) == 1:
+    return participantes[0]
+  duelo = participantes.copy()
+  for x in range(0, len(duelo) - 1, 2):
+    q = "SELECT id FROM practica.deck WHERE propietario=%s ORDER BY RANDOM() LIMIT 1;"
+    p = (duelo[x],)
+    cursor.execute(q, p)
+    deck1 = cursor.fetchone()[0]
+    p = (duelo[x+1],)
+    cursor.execute(q, p)
+    deck2 = cursor.fetchone()[0]
+    randGanador = randint(x, x+1)
+    ganador = duelo[randGanador]
+    if randGanador % 2 == 0:
+      perdedor = duelo[x+1]
+    else:
+      perdedor = duelo[x]
+    try:
+      q = "INSERT INTO practica.partida (duelista1, duelista2, ganador, deck1, deck2, fecha, ciudad, provincia) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+      p = (duelo[x], duelo[x+1], ganador, deck1, deck2, fecha, ciudad, provincia, )
+      f.write(str(cursor.mogrify(q, p)) + "\n")
+      cursor.execute(q, p)
+      participantes.remove(perdedor)
+    except psycopg2.Error as e:
+      print(e)
+      conn.rollback()
+  return simulate_tournament(cursor, participantes, fecha, ciudad, provincia)
+
+
+def create_torneos(cursor):
+  for i in range(150):
+    print("Simulando torneo (%d de %d)" % (i, 100), end='\r')
+    numParticipantes = randint(2, 6)
+    numParticipantes = pow(2, numParticipantes)
+    participantes = []
+    randCity = randint(0, len(ciudades) - 1)
+    ciudad = ciudades[randCity][0]
+    provincia = ciudades[randCity][1]
+    fecha = fake.date_between_dates(date_start=datetime(2015,1,1), date_end=datetime(2024,5,20))
+
+    try:
+      q = "INSERT INTO practica.torneo (ciudad, provincia, fecha) VALUES (%s, %s, %s)"
+      p = (ciudad, provincia, fecha, )
+      f.write(str(cursor.mogrify(q, p)) + "\n")
+      cursor.execute(q, p)
+    except psycopg2.Error as e:
+      print(e)
+      conn.rollback()
+
+    while len(participantes) < numParticipantes:
+      jugador = jugadores[randint(0, len(jugadores) - 1)][0]
+      if jugador not in participantes:
+        participantes.append(jugador)
+        try:
+          q = "INSERT INTO practica.participante (jugador, ciudad, provincia, fecha) VALUES (%s, %s, %s, %s)"
+          p = (jugador, ciudad, provincia, fecha, )
+          f.write(str(cursor.mogrify(q, p)) + "\n")
+          cursor.execute(q, p)
+        except psycopg2.Error as e:
+          print(e)
+          conn.rollback()
+    ganador = str(simulate_tournament(cursor, participantes.copy(), fecha, ciudad, provincia))
+    try:
+      q = "UPDATE practica.torneo SET ganador=%s WHERE ciudad=%s AND provincia=%s AND fecha=%s;"
+      p = (ganador, ciudad, provincia, fecha, )
+      f.write(str(cursor.mogrify(q, p)) + "\n")
+      cursor.execute(q, p)
+    except psycopg2.Error as e:
+      print(e)
+      conn.rollback()
+    
+  conn.commit()
+
+
 # create_jugadores(cursor)
 # create_copias(cursor)
 # create_deck(cursor)
 # create_tienda(cursor)
-create_inventario(cursor)
+# create_inventario(cursor)
+create_torneos(cursor)
 # print(end="\33[2K\r")
 f.close()
 conn.close()
