@@ -262,13 +262,41 @@ def create_torneos(cursor):
     
   conn.commit()
 
+def create_venta(cursor):
+  random_cliente = True
+  for i in range(10000):
+    print("Venta de tienda %d de %d" % (i, 10000), end='\r')
+    if random_cliente is True:
+      q = """SELECT nif FROM practica.jugador j
+           WHERE NOT EXISTS 
+           (SELECT * FROM practica.Venta WHERE cliente = j.nif)
+           ORDER BY RANDOM() LIMIT 1;"""
+      cursor.execute(q)
+      cliente = cursor.fetchall()
+      if len(cliente) == 0:
+        random_cliente = False
+      else:
+        cliente = cliente[0]
+    if random_cliente is False:
+      cliente = jugadores[randint(0, len(jugadores) - 1)]
+
+    tienda = tiendas[randint(0, len(tiendas) - 1)]
+    fecha = fake.date_between_dates(date_start=datetime(2015,1,1), date_end=datetime(2024,5,20))
+
+    q = "INSERT INTO practica.venta (fecha, vendedor, cliente) VALUES (%s, %s, %s);"
+    p = (fecha, tienda, cliente, )
+    cursor.execute(q, p)
+  conn.commit()
+
+
 
 # create_jugadores(cursor)
 # create_copias(cursor)
 # create_deck(cursor)
 # create_tienda(cursor)
 # create_inventario(cursor)
-create_torneos(cursor)
+# create_torneos(cursor)
+create_venta(cursor)
 # print(end="\33[2K\r")
 f.close()
 conn.close()
