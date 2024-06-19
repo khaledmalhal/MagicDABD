@@ -106,7 +106,7 @@ class Copia(models.Model):
     class Meta:
         managed = False
         db_table = 'copia'
-        unique_together = (('carta', 'propietario'),)
+        unique_together = ['carta', 'propietario']
 
 
 class Deck(models.Model):
