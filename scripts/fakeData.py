@@ -39,7 +39,8 @@ conn = psycopg2.connect(database="est_b7241743",
                         host="ubiwan.epsevg.upc.edu")
 cursor = conn.cursor()
 
-os.remove('queries.sql')
+if os.path.isfile('queries.sql'):
+  os.remove('queries.sql')
 f = open('queries.sql', 'a')
 
 # Obteniendo ciudades
@@ -52,7 +53,7 @@ q = "SELECT codigo FROM practica.carta;"
 cursor.execute(q)
 cartas = cursor.fetchall()
 
-q = "SELECT nif FROM practica.jugador;"
+q = "SELECT nif FROM practica.jugador ORDER BY RANDOM();"
 cursor.execute(q)
 jugadores = cursor.fetchall()
 
@@ -288,7 +289,104 @@ def create_venta(cursor):
     cursor.execute(q, p)
   conn.commit()
 
+def insert_carta(cursor, jugador, carta, cantidad):
+  q = "SELECT carta FROM practica.copia WHERE carta = %s AND propietario = %s;"
+  p = (carta, jugador, )
+  cursor.execute(q, p)
+  exist = cursor.fetchone()
+  if exist is None:
+    q = "INSERT INTO practica.copia (cantidad, carta, propietario) VALUES (%s, %s, %s);"  
+  else:
+    q = "UPDATE practica.copia SET cantidad = cantidad + %s WHERE carta = %s AND propietario = %s;"
+  p = (cantidad, carta, jugador,)
+  # f.write(str(cursor.mogrify(q, p)) + "\n")
+  cursor.execute(q, p)
 
+def create_vendida(cursor):
+  q = "SELECT idfactura, cliente, vendedor FROM practica.venta;"
+  cursor.execute(q)
+  ventas = cursor.fetchall()
+  for i in range(len(ventas) - 1):
+    print("Cartas vendidas %d de %d" % (i, len(ventas) - 1), end='\r')
+    factura  = ventas[i][0]
+    cliente  = ventas[i][1]
+    vendedor = ventas[i][2]
+    q = """SELECT carta, cantidad FROM practica.inventario 
+           WHERE tienda = %s AND cantidad > 10 ORDER BY RANDOM();"""
+    p = (vendedor, )
+    cursor.execute(q, p)
+    inventario = cursor.fetchall()
+    if len(inventario) == 0:
+      f.write("Skipping empty inventario " + ventas[i][2] + "\n")
+      continue
+    vendidas = randint(1, len(inventario) - 1)
+    for j in range(vendidas):
+      carta = inventario[j][0]
+      cant_inv = inventario[j][1]
+      cantidad = randint(1, int(cant_inv / 6))
+      try:
+        q = """INSERT INTO practica.vendida (cantidad, carta, factura, vendedor) VALUES (%s, %s, %s, %s);"""
+        p = (cantidad, carta, factura, vendedor, )
+        # f.write(str(cursor.mogrify(q, p)) + "\n")
+        cursor.execute(q, p)
+        q = """UPDATE practica.inventario 
+               SET cantidad = cantidad - %s WHERE tienda = %s AND carta = %s;"""
+        p = (cantidad, vendedor, carta, )
+        # f.write(str(cursor.mogrify(q, p)) + "\n")
+        cursor.execute(q, p)
+        insert_carta(cursor, cliente, carta, cantidad)
+      except psycopg2.Error as e:
+        print(e)
+        conn.rollback()
+  conn.commit()
+
+def create_transaccion(cursor):
+  randjugadores = randint((len(jugadores)/2), len(jugadores)-1)
+  q = "SELECT cantidad, carta, propietario FROM practica.copia;"
+  cursor.execute(q)
+  copia_array = cursor.fetchall()
+  copia = []
+  for c in copia_array:
+    obj = {}
+    obj['cantidad']    = c[0]
+    obj['carta']       = c[1]
+    obj['propietario'] = c[2]
+    copia.append(obj)
+  print(len(copia))
+  for i in range(randjugadores):
+    print("Transaccion %d de %d" % (i, randjugadores), end='\r')
+    cede = jugadores[i]
+    copias = [x for x in copia if x['propietario'] == cede[0]]
+    if len(copias) == 0:
+      continue
+    for j in range(len(copias) - 1):
+      cantidad = copias[j]['cantidad']
+      carta = copias[j]['carta']
+      rand_cantidad = randint(1, max(1, cantidad - 1))
+      for z in range(rand_cantidad):
+        recibe = jugadores[randint(0, len(jugadores) - 1)]
+        insert_carta(cursor, recibe, carta, 1)
+        try:
+          q = "INSERT INTO practica.transaccion (carta, cede, recibe) VALUES (%s, %s, %s);"
+          p = (carta, cede, recibe, )
+          # f.write(str(cursor.mogrify(q, p)) + "\n")
+          cursor.execute(q, p)
+        except psycopg2.Error as e:
+          print(e)
+          conn.rollback()
+      try:
+        q = """UPDATE practica.copia SET cantidad = cantidad - %s WHERE carta = %s AND propietario = %s"""
+        p = (rand_cantidad, carta, cede, )
+        # f.write(str(cursor.mogrify(q, p)) + "\n")
+        cursor.execute(q, p)
+      except psycopg2.Error as e:
+        print(e)
+        conn.rollback()
+  conn.commit()
+
+
+
+  
 
 # create_jugadores(cursor)
 # create_copias(cursor)
@@ -296,7 +394,9 @@ def create_venta(cursor):
 # create_tienda(cursor)
 # create_inventario(cursor)
 # create_torneos(cursor)
-create_venta(cursor)
+# create_venta(cursor)
+# create_vendida(cursor)
+create_transaccion(cursor)
 # print(end="\33[2K\r")
 f.close()
 conn.close()
