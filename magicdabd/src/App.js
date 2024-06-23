@@ -1,7 +1,28 @@
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import logo from './logo.svg';
 import './App.css';
 
+const APIUrl = "http://127.0.0.1:8000";
+
 function App() {
+  const [jugadores, setJugadores] = useState([]);
+  useEffect(() => {
+    async function fetchData() {
+      const response = await fetch(`${APIUrl}/jugadores`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors'
+      })
+      const data = await response.json()
+      console.log(data)
+      setJugadores(data)
+    }
+    fetchData();
+  }, []);
+
   return (
     <div className="App">
       <header className="App-header">
