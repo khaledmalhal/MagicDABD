@@ -1,0 +1,14 @@
+.config-tournament {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    min-height: 100%;
+    padding: 10px;
+}
+
+.tournament-insert {
+    position: relative;
+    width: 80%;
+    min-height: 100%;
+}

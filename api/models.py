@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, date
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
@@ -22,5 +22,21 @@ class Jugador(BaseModel):
                 "apellido": "Doe",
                 "ciudad": "Barcelona",
                 "provincia": "Barcelona"
+            }
+        }
+
+class Torneo(BaseModel):
+    fecha:     date = Field(...)
+    ciudad:    str  = Field(...)
+    provincia: str  = Field(...)
+    ganador:   str  = Field(...)
+
+    class Config:
+        json_schema_extra = {
+            'example': {
+                'fecha': '2024/05/01',
+                'ciudad': 'Barcelona',
+                'provincia': 'Barcelona',
+                'ganador': '123456789A'
             }
         }

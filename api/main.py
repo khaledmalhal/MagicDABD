@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from models import Jugador
+from models import Jugador, Torneo
 from docs import tags_metadata
 from decouple import config
 import json
@@ -37,7 +37,7 @@ async def root():
 @app.get('/jugadores', response_model=list[Jugador], tags=["jugadores"])
 async def getAllJugadores():
     try:
-        q = "SELECT nif, nombre, apellido, ciudad, provincia FROM practica.jugador";
+        q = "SELECT nif, nombre, apellido, ciudad, provincia FROM practica.jugador;"
         cursor.execute(q)
         ret = cursor.fetchall()
         columns = ['nif', 'nombre', 'apellido', 'ciudad', 'provincia']
@@ -46,6 +46,22 @@ async def getAllJugadores():
             jugador = dict(zip(columns, row))
             jugadores.append(jugador)
         return jugadores
+    except psycopg2.Error as e:
+        print(e)
+        conn.rollback()
+
+@app.get('/torneos', response_model=list[Torneo], tags=['torneo'])
+async def getAllTorneos():
+    try:
+        q = "SELECT fecha, ciudad, provincia, ganador FROM practica.torneo;"
+        cursor.execute(q)
+        ret = cursor.fetchall()
+        columns = ['fecha', 'ciudad', 'provincia', 'ganador']
+        torneos = []
+        for row in ret:
+            torneo = dict(zip(columns, row))
+            torneos.append(torneo)
+        return torneos
     except psycopg2.Error as e:
         print(e)
         conn.rollback()
