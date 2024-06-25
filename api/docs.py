@@ -5,5 +5,18 @@ tags_metadata = [{
 {
     "name": "torneo",
     "description": "torneos routes"
-}]
+},
+{
+    "name": "participante",
+    "description": "participantes routes"
+},
+{
+    "name": "partida",
+    "description": "partida routes"
+},
+{
+    "name": "ciudad",
+    "description": "ciudad routes"
+}
+]
 

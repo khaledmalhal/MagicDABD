@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from models import Jugador, Torneo
+from models import Jugador, Torneo, Participante, Partida, Ciudad
 from docs import tags_metadata
 from decouple import config
 import json
@@ -65,3 +65,60 @@ async def getAllTorneos():
     except psycopg2.Error as e:
         print(e)
         conn.rollback()
+
+@app.get('/participantes', response_model=list[Participante], tags=['participante'])
+async def getParticipantes(fecha: str, ciudad: str, provincia: str):
+    try:
+        q = """SELECT jugador from practica.participante WHERE
+               fecha = %s AND ciudad = %s AND provincia = %s"""
+        p = (fecha, ciudad, provincia, )
+        cursor.execute(q, p)
+        ret = cursor.fetchall()
+        participantes = []
+        for row in ret:
+            participante = dict(zip(['jugador'], row))
+            participantes.append(participante)
+        return participantes
+    except psycopg2.Error as e:
+        print(e)
+        conn.rollback()
+
+@app.get('/partidas', response_model=list[Partida], tags=['partida'])
+async def getPartidas(fecha: str, ciudad: str, provincia: str):
+    try:
+        q = """SELECT duelista1, duelista2, ganador, deck1, deck2
+               FROM practica.partida WHERE fecha = %s AND ciudad = %s AND provincia = %s"""
+        p = (fecha, ciudad, provincia, )
+        print(cursor.mogrify(q, p))
+        cursor.execute(q, p)
+        ret = cursor.fetchall()
+        columns = ['duelista1', 'duelista2', 'ganador', 'deck1', 'deck2', 'ciudad', 'provincia', 'fecha']
+        partidas = []
+        for row in ret:
+            partida = dict(zip(columns, row + (ciudad, provincia, fecha)))
+            partidas.append(partida)
+        print(partidas)
+        return partidas
+    except psycopg2.Error as e:
+        print(e)
+        conn.rollback()
+
+@app.get('/ciudades', response_model=list[Ciudad], tags=['ciudad'])
+async def getCiudades():
+    try:
+        q = "SELECT provincia FROM practica.provincia;"
+        cursor.execute(q)
+        provincias = [r[0] for r in cursor.fetchall()]
+        # provincias = cursor.fetchall()
+        ciudades = []
+        for provincia in provincias:
+            provincia = provincia.replace('(','').replace(')','').replace('"','')
+            # print(type(provincia))
+            q = "SELECT nombre FROM practica.ciudad WHERE provincia = %s;"
+            cursor.execute(q, (provincia, ))
+            list_ciudades = [r[0] for r in cursor.fetchall()]
+            ciudades.append(dict(provincia=provincia, ciudades=list_ciudades))
+        return ciudades
+    except psycopg2.Error as e:
+        print(e)
+        conn.rollback()    

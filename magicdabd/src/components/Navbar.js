@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
 import { Container, Header, Slider, Nav, Navbar } from 'rsuite';
 import { Drawer, ButtonToolbar, Button } from 'rsuite';
+import { Form, DatePicker, Cascader, Panel } from 'rsuite';
+
 import { useLocation } from 'react-router-dom'
 import './container.css';
 import 'rsuite/dist/rsuite.css';
 
+const APIUrl = "http://127.0.0.1:8000";
 const labels = ['1', '2', '3', '4', '5', '6'];
 
 const CustomNavbar = ({ active, onSelect, ...props }) => {
-  const [location, setLocation] = useState('');
   const [factor, setFactor] = useState(1);
   const [openConfig, setOpenConfig] = useState(false);
+  const [tree, setTree] = useState(null)
+  const [cascader, setCascader] = useState(null);
+  const [fecha, setFecha] = useState(null);
 
   const handleFactorInput = (value) => {
     if (value < 1) {
@@ -19,6 +24,58 @@ const CustomNavbar = ({ active, onSelect, ...props }) => {
     else setFactor(value)
     localStorage.setItem('factor', factor);
   }
+
+  async function fetchTorneos() {
+    console.log(cascader)
+    console.log(fecha)
+    let month = fecha.getMonth()+1
+    if (month < 10)
+      month = '0'+String(month)
+    const date = fecha.getFullYear()+'-'+month+'-'+fecha.getDate()
+    const response = await fetch(`${APIUrl}/partidas?` + new URLSearchParams({
+      fecha: date,
+      ciudad: cascader['ciudad'],
+      provincia: cascader['provincia']
+    }), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      mode: 'cors'
+    })
+    const data = await response.json()
+    console.log(data)
+  }
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await fetch(`${APIUrl}/ciudades`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          mode: 'cors'
+        })
+        const data = await response.json()
+        console.log(`Ciudades obtenidos: ${data.length}`)
+        // ciudades = data
+        let tree = []
+        for (const provincia of data) {
+          let children = []
+          for (const ciudad of provincia['ciudades']) {
+            children.push({label: ciudad, value: {provincia: provincia['provincia'], ciudad: ciudad}})
+          }
+          tree.push({label: provincia['provincia'], value: provincia['provincia'], children: children})
+          setTree(tree)
+        }
+        console.log(tree)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchData();
+  }, []);
 
   return (
     <div>
@@ -32,25 +89,24 @@ const CustomNavbar = ({ active, onSelect, ...props }) => {
             <Nav.Item href="/">Insertar Torneos</Nav.Item>
             <Nav.Item href="/view">Ver Torneos</Nav.Item>
           </Nav>
-          {useLocation().pathname != "/view" && (
-            <div className="button-config">
-              <ButtonToolbar>
-                <Button onClick={() => setOpenConfig(true)}>
-                  Configuraciones
-                </Button>
-              </ButtonToolbar>
-            </div>
-          )}
+          <div className="button-config">
+            <ButtonToolbar>
+              <Button onClick={() => setOpenConfig(true)}>
+                Configuraciones
+              </Button>
+            </ButtonToolbar>
+          </div>
           <Drawer open={openConfig} onClose={() => setOpenConfig(false)}>
             <Drawer.Header>
               <Drawer.Title>Configuración</Drawer.Title>
               <Drawer.Actions>
                 <Button onClick={() => setOpenConfig(false)}>Cancelar</Button>
-                <Button onClick={() => setOpenConfig(false)}appearance="primary">
+                <Button onClick={() => {setOpenConfig(false); fetchTorneos()}}appearance="primary">
                   Confirmar
                 </Button>
               </Drawer.Actions>
             </Drawer.Header>
+            {useLocation().pathname == "/" && (
             <Drawer.Body>
               <div className="config-tournament min-h-screen">
                 <label position="relative">Ajuste el factor de jugadores</label>
@@ -77,7 +133,27 @@ const CustomNavbar = ({ active, onSelect, ...props }) => {
                   Cantidad de jugadores totales: {Math.pow(4, factor)}
                 </label>
               </div>
-            </Drawer.Body>
+            </Drawer.Body> )}
+            {useLocation().pathname == "/view" && (
+              <Drawer.Body>
+                <Panel>
+                  <Form>
+                    <Form.Group controlId="datePicker">
+                      <Form.ControlLabel>Fecha:</Form.ControlLabel>
+                      <Form.Control name="datePicker" accepter={DatePicker}
+                                    onChange={(date) => setFecha(date)} />
+                    </Form.Group>
+
+                    <Form.Group controlId="cascader">
+                      <Form.ControlLabel>Provincia/Ciudad:</Form.ControlLabel>
+                      <Form.Control name="cascader" accepter={Cascader} 
+                                    data={tree} columnWidth={200}
+                                    onChange={(value, event) => setCascader(value)} />
+                    </Form.Group>
+                  </Form>
+                </Panel>
+              </Drawer.Body>
+            )}
           </Drawer>
         </Navbar>
       </Header>

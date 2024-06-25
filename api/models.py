@@ -40,3 +40,53 @@ class Torneo(BaseModel):
                 'ganador': '123456789A'
             }
         }
+
+class Participante(BaseModel):
+    jugador:   str = Field(...)
+    ciudad:    str = Field(...)
+    provincia: str = Field(...)
+    fecha:     date = Field(...)
+
+    class Config:
+        json_schema_extra = {
+            'example': {
+                'fecha': '2024/05/01',
+                'ciudad': 'Barcelona',
+                'provincia': 'Barcelona',
+                'jugador': '123456789A'
+            }
+        }
+
+class Partida(BaseModel):
+    duelista1: str = Field(...)
+    duelista2: str = Field(...)
+    ganador: str = Field(...)
+    deck1: int = Field(...)
+    deck2: int = Field(...)
+    ciudad:    str = Field(...)
+    provincia: str = Field(...)
+    fecha:     date = Field(...)
+
+    class Config:
+        json_schema_extra = {
+            'example': {
+                'duelista1': '123456789A',
+                'duelista2': '987654321B',
+                'deck1': '1',
+                'deck2': '2',
+                'fecha': '2024/05/01',
+                'ciudad': 'Barcelona',
+                'provincia': 'Barcelona',
+                'ganador': '123456789A'
+            }
+        }
+
+class Ciudad(BaseModel):
+    ciudades: list = Field(...)
+    provincia: str = Field(...)
+
+    class Config:
+        json_schema_extra = {
+            'ciudad': "Barcelona",
+            'provincia': 'Barcelona'
+        }

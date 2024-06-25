@@ -10,7 +10,7 @@ const APIUrl = "http://127.0.0.1:8000";
 function App() {
   const [jugadores, setJugadores] = useState([]);
   const [torneos, setTorneos] = useState([]);
-  const [active, setActive] = useState('new');
+  const [ciudades, setCiudades] = useState([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -23,7 +23,7 @@ function App() {
           mode: 'cors'
         })
         const data = await response.json()
-        console.log(data)
+        console.log(`Jugadores obtenidos: ${data.length}`)
         setJugadores(data)
         localStorage.setItem('jugadores', JSON.stringify(jugadores));
       } catch (e) {
@@ -44,9 +44,30 @@ function App() {
           mode: 'cors'
         })
         const data = await response.json()
-        console.log(data)
+        console.log(`Torneos obtenidos: ${data.length}`)
         setTorneos(data)
         localStorage.setItem('torneos', JSON.stringify(torneos));
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await fetch(`${APIUrl}/ciudades`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          mode: 'cors'
+        })
+        const data = await response.json()
+        console.log(`Ciudades obtenidos: ${data.length}`)
+        setCiudades(data)
+        localStorage.setItem('ciudades', JSON.stringify(data));
       } catch (e) {
         console.error(e)
       }

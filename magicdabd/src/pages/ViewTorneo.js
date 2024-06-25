@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
+import TournamentView from "../components/TournamentView";
 
 function ViewTorneo() {
   return (
-    <div></div>
+    <TournamentView></TournamentView>
   )
 }
 
