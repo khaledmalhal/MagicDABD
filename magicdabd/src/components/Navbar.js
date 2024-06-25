@@ -9,6 +9,7 @@ import 'rsuite/dist/rsuite.css';
 
 const APIUrl = "http://127.0.0.1:8000";
 const labels = ['1', '2', '3', '4', '5', '6'];
+let partidas = []
 
 const CustomNavbar = ({ active, onSelect, ...props }) => {
   const [factor, setFactor] = useState(1);
@@ -43,8 +44,7 @@ const CustomNavbar = ({ active, onSelect, ...props }) => {
       },
       mode: 'cors'
     })
-    const data = await response.json()
-    console.log(data)
+    partidas = await response.json()
   }
 
   useEffect(() => {
@@ -162,4 +162,5 @@ const CustomNavbar = ({ active, onSelect, ...props }) => {
   );
 };
 
+export { partidas };
 export default CustomNavbar;
